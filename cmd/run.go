@@ -42,7 +42,7 @@ var runCmd = &cobra.Command{
 	Long: `
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		debug(fmt.Sprintf("IGMPQD Started."))
+		debug("IGMPQD Started.")
 		debug(fmt.Sprintf("%15s: %s", "version", GitDescribe))
 		debug(fmt.Sprintf("%15s: %s", "commit", GitCommit))
 		debug(fmt.Sprintf("%15s: %s", "grpAddress", viper.GetString("grpAddress")))
@@ -57,7 +57,7 @@ var runCmd = &cobra.Command{
 		signal.Notify(signalC, os.Interrupt)
 		go func() {
 			sendPacket()
-			for _ = range tickC {
+			for range tickC { // More idiomatic way to range when value is not used
 				sendPacket()
 			}
 		}()
@@ -72,7 +72,7 @@ func sendPacket() {
 	dstAddress := net.ParseIP(viper.GetString("dstAddress"))
 
 	// IGMP https://tools.ietf.org/html/rfc2236#section-2
-	payload = make([]byte, 8, 8)
+	payload = make([]byte, 8) // Simplified when length and capacity are the same
 	payload[0] = uint8(0x11)
 	payload[1] = uint8(viper.GetInt("maxResponseTime"))
 	payload[4] = grpAddress.To4()[0]
@@ -129,24 +129,29 @@ func sendPacket() {
 
 }
 
+// SetupRunCommand configures the flags and Viper bindings for the given command.
+// This is used by init() and can be called by tests.
+func SetupRunCommand(cmdToSetup *cobra.Command) {
+	cmdToSetup.PersistentFlags().Bool("debug", false, "Enable debug messages to stderr.")
+	cmdToSetup.PersistentFlags().StringP("grpAddress", "g", "0.0.0.0", "Specified IP address to use as the Group Address. Used to query for specific group members.")
+	cmdToSetup.PersistentFlags().StringP("dstAddress", "d", "224.0.0.1", "Specified IP address to send the IGMP Query to.")
+	cmdToSetup.PersistentFlags().StringP("interface", "I", "", "Specified network interface to send the IGMP Query.")
+	cmdToSetup.PersistentFlags().IntP("interval", "i", 30, "The time in seconds to delay between sending IGMP Query messages.")
+	cmdToSetup.PersistentFlags().IntP("ttl", "t", 1, "The TTL of the IGMP Query.")
+	cmdToSetup.PersistentFlags().IntP("maxResponseTime", "m", 100, "Specifies the maximum allowed time before sending a responding report in units of 1/10 second.")
+
+	viper.BindPFlag("debug", cmdToSetup.PersistentFlags().Lookup("debug"))
+	viper.BindPFlag("grpAddress", cmdToSetup.PersistentFlags().Lookup("grpAddress"))
+	viper.BindPFlag("dstAddress", cmdToSetup.PersistentFlags().Lookup("dstAddress"))
+	viper.BindPFlag("interface", cmdToSetup.PersistentFlags().Lookup("interface"))
+	viper.BindPFlag("interval", cmdToSetup.PersistentFlags().Lookup("interval"))
+	viper.BindPFlag("ttl", cmdToSetup.PersistentFlags().Lookup("ttl"))
+	viper.BindPFlag("maxResponseTime", cmdToSetup.PersistentFlags().Lookup("maxResponseTime"))
+}
+
 func init() {
 	RootCmd.AddCommand(runCmd)
-
-	runCmd.PersistentFlags().Bool("debug", false, "Enable debug messages to stderr.")
-	runCmd.PersistentFlags().StringP("grpAddress", "g", "0.0.0.0", "Specified IP address to use as the Group Address. Used to query for specific group members.")
-	runCmd.PersistentFlags().StringP("dstAddress", "d", "224.0.0.1", "Specified IP address to send the IGMP Query to.")
-	runCmd.PersistentFlags().StringP("interface", "I", "", "Specified network interface to send the IGMP Query.")
-	runCmd.PersistentFlags().IntP("interval", "i", 30, "The time in seconds to delay between sending IGMP Query messages.")
-	runCmd.PersistentFlags().IntP("ttl", "t", 1, "The TTL of the IGMP Query.")
-	runCmd.PersistentFlags().IntP("maxResponseTime", "m", 100, "Specifies the maximum allowed time before sending a responding report in units of 1/10 second.")
-
-	viper.BindPFlag("debug", runCmd.PersistentFlags().Lookup("debug"))
-	viper.BindPFlag("grpAddress", runCmd.PersistentFlags().Lookup("grpAddress"))
-	viper.BindPFlag("dstAddress", runCmd.PersistentFlags().Lookup("dstAddress"))
-	viper.BindPFlag("interface", runCmd.PersistentFlags().Lookup("interface"))
-	viper.BindPFlag("interval", runCmd.PersistentFlags().Lookup("interval"))
-	viper.BindPFlag("ttl", runCmd.PersistentFlags().Lookup("ttl"))
-	viper.BindPFlag("maxResponseTime", runCmd.PersistentFlags().Lookup("maxResponseTime"))
+	SetupRunCommand(runCmd) // Call the new setup function
 }
 
 func debug(message string) {

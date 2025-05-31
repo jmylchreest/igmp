@@ -21,14 +21,27 @@
 package main
 
 import (
-	"strconv"
-
 	"github.com/jmylchreest/igmpqd/cmd"
+	"strconv"
+)
+
+// Variables to be set by linker flags
+var (
+	GitCommit   string
+	GitDescribe string
+	BuildTime   string // Unix epoch seconds, as a string from ldflags
 )
 
 func main() {
+	// Assign values from ldflags (main package) to cmd package variables
 	cmd.GitCommit = GitCommit
 	cmd.GitDescribe = GitDescribe
-	cmd.BuildTime, _ = strconv.ParseInt(BuildTime, 0, 64)
+
+	if bt, err := strconv.ParseInt(BuildTime, 10, 64); err == nil {
+		cmd.BuildTime = bt
+	}
+	// If BuildTime is not a valid int, cmd.BuildTime will remain 0 (its zero value)
+	// cmd/version.go handles the case where cmd.BuildTime is 0.
+
 	cmd.Execute()
 }

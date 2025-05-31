@@ -27,13 +27,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Variables to be set by main.go from ldflags
 var (
-	// GitCommit is exported to allow remote setting
-	GitCommit string
-	// GitDescribe is exported to allow remote setting
+	GitCommit   string
 	GitDescribe string
-	// BuildTime is the epoch of when the tool was builddefaultConfigFile
-	BuildTime int64
+	BuildTime   int64 // Unix epoch seconds, parsed by main.go
 )
 
 // RootCmd is the entry command for cobra
