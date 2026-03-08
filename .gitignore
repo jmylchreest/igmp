@@ -1,2 +1,27 @@
+# Build artifacts
 bin/
 dist/
+/igmpqd
+/igmpmon
+*.exe
+
+# Test artifacts
+coverage.out
+*.test
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# GoReleaser
+__snapshot__/
+
+# Local tooling
+.aide/

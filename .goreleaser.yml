@@ -1,0 +1,73 @@
+# SPDX-License-Identifier: MIT
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go test -race ./...
+
+builds:
+  - id: igmpqd
+    main: ./cmd/igmpqd
+    binary: igmpqd
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/jmylchreest/igmp/internal/version.GitCommit={{.ShortCommit}}
+      - -X github.com/jmylchreest/igmp/internal/version.GitDescribe={{.Tag}}
+      - -X github.com/jmylchreest/igmp/internal/version.BuildTime={{.Date}}
+
+  - id: igmpmon
+    main: ./cmd/igmpmon
+    binary: igmpmon
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/jmylchreest/igmp/internal/version.GitCommit={{.ShortCommit}}
+      - -X github.com/jmylchreest/igmp/internal/version.GitDescribe={{.Tag}}
+      - -X github.com/jmylchreest/igmp/internal/version.BuildTime={{.Date}}
+
+archives:
+  - id: igmpqd
+    builds:
+      - igmpqd
+    name_template: "igmpqd_{{ .Os }}_{{ .Arch }}"
+    format: tar.gz
+
+  - id: igmpmon
+    builds:
+      - igmpmon
+    name_template: "igmpmon_{{ .Os }}_{{ .Arch }}"
+    format: tar.gz
+
+checksum:
+  name_template: 'checksums.txt'
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+
+release:
+  github:
+    owner: jmylchreest
+    name: igmp
+  draft: false
+  prerelease: auto
